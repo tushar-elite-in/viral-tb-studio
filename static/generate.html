@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Generator - Viral TB Studio</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            400: '#ff4d4d', 
+                            500: '#ff0000', // YouTube Red
+                        },
+                        accent: {
+                            400: '#272727', // Dark Grey
+                            500: '#0f0f0f', // Black
+                            600: '#000000', 
+                        },
+                        yt: {
+                            black: '#0f0f0f',
+                            darkgray: '#272727',
+                            lightgray: '#f2f2f2',
+                            border: '#e5e5e5',
+                            darkborder: '#3f3f3f',
+                            text: '#0f0f0f',
+                            darktext: '#f1f1f1'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                        mono: ['Space Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+
+        // Theme Management
+        function getTheme() {
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                return 'dark';
+            } else {
+                return 'light';
+            }
+        }
+
+        function updateThemeIcon(mode) {
+            const btn = document.getElementById('theme-toggle');
+            if (!btn) return;
+            
+            let iconHtml = '';
+            const currentSetting = localStorage.getItem('theme'); 
+
+            if (!currentSetting) {
+                // System
+                iconHtml = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-monitor"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>';
+                btn.title = "Theme: System";
+            } else if (currentSetting === 'dark') {
+                // Dark
+                iconHtml = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-moon"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>';
+                btn.title = "Theme: Dark";
+            } else {
+                // Light
+                iconHtml = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
+                btn.title = "Theme: Light";
+            }
+            btn.innerHTML = iconHtml;
+        }
+
+        function cycleTheme() {
+            const current = localStorage.getItem('theme');
+            if (!current) {
+                localStorage.theme = 'dark';
+                document.documentElement.classList.add('dark');
+            } else if (current === 'dark') {
+                localStorage.theme = 'light';
+                document.documentElement.classList.remove('dark');
+            } else {
+                localStorage.removeItem('theme');
+                if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            }
+            updateThemeIcon();
+        }
+
+        // Init
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+             updateThemeIcon();
+        });
+    </script>
+    <!-- Markdown Parser -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Base Settings */
+        html, body {
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0a0a0a; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #444; }
+        
+        /* Background Grid */
+        .bg-grid-pattern {
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+            -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+        }
+        /* Glassmorphism Utilities */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+        /* Animations */
+        @keyframes slideUpFade {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .animate-enter {
+            animation: slideUpFade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+        }
+        .delay-100 { animation-delay: 0.1s; }
+        /* Generation Animation */
+        @keyframes scanline {
+            0% { width: 0%; opacity: 1; }
+            50% { width: 100%; opacity: 1; }
+            100% { width: 100%; opacity: 0; }
+        }
+        .loading-line {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #ff0000, transparent);
+            animation: scanline 2s ease-in-out infinite;
+        }
+        .glow-box { box-shadow: 0 0 40px -10px rgba(255, 0, 0, 0.2); } 
+        /* Markdown Styles */
+        .prose h1, .prose h2, .prose h3 { color: #171717; margin-top: 1em; margin-bottom: 0.5em; }
+        .dark .prose h1, .dark .prose h2, .dark .prose h3 { color: #f0fdf4; }
+        .prose p { color: #404040; line-height: 1.6; }
+        .dark .prose p { color: #d1d5db; }
+        .prose ul { color: #404040; }
+        .dark .prose ul { color: #d1d5db; }
+        .prose li { color: #404040; }
+        .dark .prose li { color: #d1d5db; }
+        .prose strong { color: #dc2626; }
+        .dark .prose strong { color: #ff0000; }
+        .prose code { color: #dc2626; background: rgba(0,0,0,0.05); padding: 0.2em 0.4em; border-radius: 4px; }
+        .dark .prose code { color: #ff4d4d; background: rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body class="selection:bg-brand-500/30 selection:text-brand-500 relative bg-yt-lightgray text-yt-text dark:bg-yt-black dark:text-yt-darktext transition-colors duration-300">
+    <!-- Fixed Background Elements -->
+    <div class="fixed inset-0 z-0 pointer-events-none w-full h-full overflow-hidden">
+        <div class="absolute inset-0 bg-grid-pattern opacity-40"></div>
+        <div class="absolute bottom-0 left-0 w-[500px] h-[500px] bg-brand-500/10 rounded-full blur-[100px] mix-blend-screen"></div>
+        <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-accent-500/10 rounded-full blur-[100px] mix-blend-screen"></div>
+    </div>
+    <!-- Fixed Navbar -->
+    <nav class="fixed top-0 left-0 right-0 z-50 h-16 border-b border-black/5 dark:border-white/5 bg-white/80 dark:bg-[#030303]/80 backdrop-blur-md w-full transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="/" class="font-display font-semibold text-lg tracking-tight whitespace-nowrap text-yt-text dark:text-white hover:text-brand-500 transition-colors">Viral TB Studio</a>
+            </div>
+            <div class="flex items-center gap-4">
+                <button id="theme-toggle" onclick="cycleTheme()" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-neutral-600 dark:text-neutral-400 transition-colors">
+                    <!-- Icon injected -->
+                </button>
+                <a href="/" class="text-xs font-medium text-neutral-500 dark:text-neutral-400 hover:text-yt-black dark:hover:text-white transition-colors">Back to Home</a>
+            </div>
+        </div>
+    </nav>
+    <!-- Main Content -->
+    <main class="relative z-10 w-full flex-grow py-20 flex flex-col items-center justify-center min-h-screen">
+        <div class="w-full max-w-4xl px-6">
+            <div class="glass-panel rounded-2xl p-1 glow-box animate-enter">
+                <div class="bg-white dark:bg-[#050505] rounded-xl overflow-hidden border border-black/5 dark:border-white/5 flex flex-col" style="height: min(700px, calc(100vh - 10rem));">
+                    <!-- Tool Header -->
+                    <div class="px-6 py-4 border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02] flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2.5 h-2.5 rounded-full bg-red-500"></div>
+                            <div class="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
+                            <div class="w-2.5 h-2.5 rounded-full bg-green-500"></div>
+                        </div>
+                        <div class="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/5">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="youtube" class="lucide lucide-youtube w-3.5 h-3.5 text-red-500"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"></path><path d="m10 15 5-3-5-3z"></path></svg>
+                            <span class="text-xs font-mono text-neutral-400">Metadata Generator</span>
+                        </div>
+                    </div>
+                    <!-- Tool Content -->
+                    <div class="p-8 flex flex-col flex-1 overflow-hidden bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-100">
+                        <!-- Input Section -->
+                        <div class="mb-6">
+                            <label class="text-xs font-mono text-neutral-500 uppercase tracking-wider mb-3 block">What is your video about?</label>
+                            <div class="relative group">
+                                <textarea id="ideaInput" class="w-full bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-200 dark:border-white/10 rounded-xl p-4 text-sm text-yt-black dark:text-white placeholder-neutral-400 dark:placeholder-neutral-600 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/20 transition-all resize-none h-32 leading-relaxed font-sans" placeholder="Describe your video idea here... e.g. 'A comprehensive guide to baking sourdough bread at home for beginners, covering starter maintenance and baking techniques.'"></textarea>
+                                <div class="absolute bottom-3 right-3">
+                                    <button id="generateBtn" onclick="generateContent()" class="bg-brand-500 hover:bg-brand-400 text-white px-4 py-2 rounded-lg transition-colors shadow-lg shadow-brand-500/20 text-xs font-semibold flex items-center gap-2">
+                                        Generate
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="sparkles" class="lucide lucide-sparkles w-3.5 h-3.5"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"></path><path d="M20 2v4"></path><path d="M22 4h-4"></path><circle cx="4" cy="20" r="2"></circle></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Divider / Loading -->
+                        <div id="loadingSection" class="hidden flex items-center gap-3 mb-6">
+                            <div class="h-[1px] bg-white/10 flex-grow"></div>
+                            <div class="text-[10px] text-brand-500 font-mono flex items-center gap-2 animate-pulse">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="cpu" class="lucide lucide-cpu w-3.5 h-3.5 animate-spin"><path d="M12 20v2"></path><path d="M12 2v2"></path><path d="M17 20v2"></path><path d="M17 2v2"></path><path d="M2 12h2"></path><path d="M2 17h2"></path><path d="M2 7h2"></path><path d="M20 12h2"></path><path d="M20 17h2"></path><path d="M20 7h2"></path><path d="M7 20v2"></path><path d="M7 2v2"></path><rect x="4" y="4" width="16" height="16" rx="2"></rect><rect x="8" y="8" width="8" height="8" rx="1"></rect></svg> 
+                                ANALYZING TRENDS & GENERATING METADATA...
+                            </div>
+                            <div class="h-[1px] bg-white/10 flex-grow"></div>
+                        </div>
+                            <!-- Output Section -->
+                            <div id="resultsSection" class="flex-1 space-y-6 overflow-y-auto relative hidden pr-2 w-full min-h-0">
+                                
+                                <!-- Title Block -->
+                                <div class="group relative bg-black/[0.03] dark:bg-white/[0.03] border border-black/5 dark:border-white/10 rounded-xl p-5 transition-all hover:border-brand-500/30 w-full">
+                                    <div class="flex justify-between items-center mb-3">
+                                        <label class="text-[10px] font-mono text-brand-500 uppercase tracking-widest font-bold">Optimized Title</label>
+                                        <button onclick="copyToClipboard(event, 'titleOutput')" class="p-1.5 rounded-md hover:bg-black/5 dark:hover:bg-white/5 text-neutral-500 hover:text-yt-black dark:hover:text-white transition-all flex-shrink-0" title="Copy Title">
+                                            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    </div>
+                                    <div id="titleOutput" class="text-sm md:text-base font-display font-medium text-yt-black dark:text-white leading-relaxed break-words whitespace-pre-wrap w-full">
+                                        <!-- Title Injected Here -->
+                                    </div>
+                                </div>
+
+                                <!-- Description Block -->
+                                <div class="group relative bg-black/[0.03] dark:bg-white/[0.03] border border-black/5 dark:border-white/10 rounded-xl p-5 transition-all hover:border-accent-500/30 w-full">
+                                    <div class="flex justify-between items-center mb-3">
+                                        <label class="text-[10px] font-mono text-accent-500 uppercase tracking-widest font-bold">SEO Description</label>
+                                        <button onclick="copyToClipboard(event, 'descOutput')" class="p-1.5 rounded-md hover:bg-black/5 dark:hover:bg-white/5 text-neutral-500 hover:text-yt-black dark:hover:text-white transition-all flex-shrink-0" title="Copy Description">
+                                            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    </div>
+                                    <div id="descOutput" class="prose prose-sm max-w-none text-xs leading-relaxed break-words w-full text-neutral-700 dark:text-gray-300">
+                                        <!-- Description Injected Here -->
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <!-- Initial Placeholder (Visible initially) -->
+                            <div id="initialPlaceholder" class="flex-1 flex flex-col items-center justify-center text-neutral-500 dark:text-neutral-400 border border-dashed border-black/10 dark:border-white/5 rounded-xl bg-white/[0.01] min-h-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" data-lucide="layout-template" class="lucide lucide-layout-template w-12 h-12 mb-4 opacity-50"><rect width="18" height="7" x="3" y="3" rx="1"></rect><rect width="9" height="7" x="3" y="14" rx="1"></rect><rect width="5" height="7" x="16" y="14" rx="1"></rect></svg>
+                                <span class="text-xs font-mono uppercase tracking-widest">Waiting for input...</span>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script>
+        lucide.createIcons();
+
+        function copyToClipboard(event, elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.innerText || element.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                // Temporary feedback
+                const btn = event.currentTarget;
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5 text-brand-500"></i>';
+                lucide.createIcons();
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                    lucide.createIcons();
+                }, 2000);
+            });
+        }
+
+        async function generateContent() {
+            const idea = document.getElementById('ideaInput').value.trim();
+            if (!idea) {
+                alert("Please enter a video idea.");
+                return;
+            }
+            // UI State: Loading
+            const generateBtn = document.getElementById('generateBtn');
+            const loadingSection = document.getElementById('loadingSection');
+            const resultsSection = document.getElementById('resultsSection');
+            const initialPlaceholder = document.getElementById('initialPlaceholder');
+            
+            const titleOutput = document.getElementById('titleOutput');
+            const descOutput = document.getElementById('descOutput');
+
+            generateBtn.disabled = true;
+            generateBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            loadingSection.classList.remove('hidden');
+            initialPlaceholder.classList.add('hidden');
+            resultsSection.classList.add('hidden');
+            
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ idea: idea })
+                });
+
+                if (response.status === 429) {
+                    throw new Error("API Quota Exceeded. Please try again later.");
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                const rawResult = data.result ? data.result.trim() : "";
+
+                // Logic: First line is title, rest is description
+                const lines = rawResult.split('\n');
+                let title = "";
+                let description = "";
+
+                if (lines.length > 0) {
+                    // Extract title (first line), removing any markdown bolding if it sneaks in
+                    title = lines[0].replace(/\*\*/g, '').trim();
+                    
+                    // Extract description (rest of the lines)
+                    if (lines.length > 1) {
+                        description = lines.slice(1).join('\n').trim();
+                    } else {
+                        description = "No description generated.";
+                    }
+                } else {
+                    title = "Error parsing output";
+                    description = rawResult;
+                }
+                
+                // Render content
+                titleOutput.innerText = title;
+                descOutput.innerHTML = marked.parse(description);
+                
+                // UI State: Success
+                loadingSection.classList.add('hidden');
+                resultsSection.classList.remove('hidden');
+                lucide.createIcons();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert(error.message);
+                loadingSection.classList.add('hidden');
+                initialPlaceholder.classList.remove('hidden');
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+    </script>
+</body>
+</html>
